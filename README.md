@@ -44,4 +44,4 @@ workflows.rda | Saved model workflows
 
 Tools
 
-R · tidymodels · ggplot2 · ranger · xgboost · kknn · glmnet · MASS
+R · tidymodels · tidyverse · corrplot · ggthemes · kableExtra · dplyr · discrim · kknn · themis
