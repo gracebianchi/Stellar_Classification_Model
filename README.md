@@ -1,1 +1,1 @@
-# Stellar_Classification_Model
+# Stellar Classification Model
