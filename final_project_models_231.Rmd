@@ -1,0 +1,302 @@
+---
+title: "final_project_models_231"
+output: html_document
+---
+
+# Loading Libraries
+
+```{r, message = F}
+# Loading libraries
+library(tidyverse)
+library(tidymodels)
+library(corrplot)
+library(ggthemes)
+library(kableExtra)
+library(dplyr)
+library(discrim)
+library(kknn)
+library(themis)
+library(xgboost)
+library(ranger)
+```
+
+# Data Cleaning
+
+```{r}
+# Reading in data
+stellar_data <- read.csv("star_classification.csv")
+```
+
+```{r}
+# Cleaning
+stellar_data <- stellar_data%>%
+  dplyr::select(u, g, r, i, z, redshift, class) %>%
+  filter(u > -9999, g > -9999, z > -9999)
+
+# Ensuring class is a factor
+stellar_data$class <- as.factor(stellar_data$class)
+```
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Selecting a random sample
+stellar_sample <- stellar_data %>% 
+  sample_n(5000)
+```
+
+# Splitting Data
+
+```{r}
+# Split data into training and testing
+set.seed(123)
+
+stellar_split <- initial_split(stellar_sample, prop = 0.80, 
+                               strata = class)
+
+stellar_train <- training(stellar_split)
+
+stellar_test <- testing(stellar_split)
+```
+
+# Creating Recipes
+
+```{r}
+# Creating recipes
+stellar_recipe_full <- recipe(class ~ u + g + r+ i + z + redshift,
+                              data = stellar_train) %>%
+  step_normalize(all_predictors())
+
+stellar_recipe_reduced <- recipe(class ~ u + g + r + i + z, 
+                                 data = stellar_train) %>%
+  step_normalize(all_predictors())
+```
+
+```{r}
+# k-fold cross validation
+stellar_folds <- vfold_cv(stellar_train, v = 10, strata = class)
+```
+
+# Setting Up Models
+
+```{r}
+# K Nearest Neighbors
+knn_model <- nearest_neighbor(neighbors = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("kknn")
+
+# LDA
+lda_model <- discrim_linear() %>%
+  set_engine("MASS") %>%
+  set_mode("classification")
+
+# QDA
+qda_model <- discrim_quad() %>%
+  set_engine("MASS") %>%
+  set_mode("classification")
+
+# Elastic Net
+en_model <- multinom_reg(mixture = tune(),
+                     penalty = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("glmnet")
+
+# Random Forest 
+rf_model <- rand_forest(mtry = tune(),
+                        trees = tune(),
+                        min_n = tune()) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("classification")
+
+# Boosted Tree
+bt_model <- boost_tree(trees = tune(),
+                      learn_rate = tune(),
+                      min_n = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("xgboost")
+
+# Decision Tree
+dt_model <- decision_tree(cost_complexity = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("rpart")
+```
+
+# Setting Up Workflows
+
+## Full Models
+
+```{r}
+# K-Nearest Neighbors
+knn_workflow_full <- workflow() %>%
+  add_model(knn_model) %>%
+  add_recipe(stellar_recipe_full)
+
+# LDA
+lda_workflow_full <- workflow() %>%
+  add_model(lda_model) %>%
+  add_recipe(stellar_recipe_full)
+
+# QDA
+qda_workflow_full <- workflow() %>%
+  add_model(qda_model) %>%
+  add_recipe(stellar_recipe_full)
+
+# Elastic Net
+en_workflow_full <- workflow() %>%
+  add_model(en_model) %>%
+  add_recipe(stellar_recipe_full)
+
+# Random Forest
+rf_workflow_full <- workflow() %>% 
+  add_model(rf_model) %>% 
+  add_recipe(stellar_recipe_full)
+
+# Boosted Tree
+bt_workflow_full <- workflow() %>%
+  add_model(bt_model) %>%
+  add_recipe(stellar_recipe_full)
+
+# Decision Tree
+dt_workflow_full <- workflow() %>%
+  add_model(dt_model) %>%
+  add_recipe(stellar_recipe_full)
+```
+
+## Reduced models
+```{r}
+# K-Nearest Neighbors
+knn_workflow_reduced <- workflow() %>%
+  add_model(knn_model) %>%
+  add_recipe(stellar_recipe_reduced)
+
+# LDA
+lda_workflow_reduced <- workflow() %>%
+  add_model(lda_model) %>%
+  add_recipe(stellar_recipe_reduced)
+
+# QDA
+qda_workflow_reduced <- workflow() %>%
+  add_model(qda_model) %>%
+  add_recipe(stellar_recipe_reduced)
+
+# Elastic Net
+en_workflow_reduced <- workflow() %>%
+  add_model(en_model) %>%
+  add_recipe(stellar_recipe_reduced)
+
+# Random Forest
+rf_workflow_reduced <- workflow() %>% 
+  add_model(rf_model) %>% 
+  add_recipe(stellar_recipe_reduced)
+
+# Boosted Tree
+bt_workflow_reduced <- workflow() %>%
+  add_model(bt_model) %>%
+  add_recipe(stellar_recipe_reduced)
+
+# Decision Tree
+dt_workflow_reduced <- workflow() %>%
+  add_model(dt_model) %>%
+  add_recipe(stellar_recipe_reduced)
+```
+
+# Creating Grids
+
+```{r}
+# KNN Grid
+knn_grid <- grid_regular(neighbors(range = c(1,30)),
+                         levels = 15)
+
+# Elastic Net Grid
+en_grid <- grid_regular(penalty(),
+                        mixture(range = c(0,1)),
+                        levels = 10)
+
+# Random Forest Grid
+rf_grid <- grid_regular(mtry(range = c(1, 5)), 
+                        trees(range = c(200, 500)),
+                        min_n(range = c(10, 20)),
+                        levels = 5)
+
+# Boosted Tree Grid
+bt_grid <- grid_regular(trees(range = c(100, 1000)),
+                        learn_rate(range = c(-5, -0.2)),
+                        min_n(range = c(2,40)),
+                        levels = 5)
+
+# Decision Tree Grid
+dt_grid <- grid_regular(cost_complexity(range = c(-4, -1)),
+                        levels = 10)
+```
+
+# Tune Models
+
+## Full Models
+
+```{r}
+tune_knn_full <- tune_grid(knn_workflow_full,
+                      resamples = stellar_folds,
+                      grid = knn_grid)
+
+lda_fit_full <- fit_resamples(lda_workflow_full, resamples = stellar_folds)
+
+qda_fit_full <- fit_resamples(qda_workflow_full, resamples = stellar_folds)
+
+tune_en_full <- tune_grid(en_workflow_full,
+                     resamples = stellar_folds,
+                     grid = en_grid)
+
+tune_rf_full <- tune_grid(rf_workflow_full,
+                          resamples = stellar_folds,
+                          grid = rf_grid)
+
+tune_bt_full <- tune_grid(bt_workflow_full,
+                          resamples = stellar_folds,
+                          grid = bt_grid)
+
+tune_dt_full <- tune_grid(dt_workflow_full,
+                          resamples = stellar_folds,
+                          grid = dt_grid)
+```
+
+## Reduced Models
+
+```{r}
+tune_knn_reduced <- tune_grid(knn_workflow_reduced,
+                      resamples = stellar_folds,
+                      grid = knn_grid)
+
+lda_fit_reduced <- fit_resamples(lda_workflow_reduced, resamples = stellar_folds)
+
+qda_fit_reduced <- fit_resamples(qda_workflow_reduced, resamples = stellar_folds)
+
+tune_en_reduced <- tune_grid(en_workflow_reduced,
+                     resamples = stellar_folds,
+                     grid = en_grid)
+
+tune_rf_reduced <- tune_grid(rf_workflow_reduced,
+                             resamples = stellar_folds,
+                             grid = rf_grid)
+
+tune_bt_reduced <- tune_grid(bt_workflow_reduced,
+                             resamples = stellar_folds,
+                             grid = bt_grid)
+
+tune_dt_reduced <- tune_grid(dt_workflow_reduced,
+                             resamples = stellar_folds,
+                             grid = dt_grid)
+```
+
+# Save Results
+
+```{r}
+save(tune_knn_full, tune_knn_reduced, lda_fit_full, lda_fit_reduced,
+     qda_fit_full, qda_fit_reduced, tune_en_full, tune_en_reduced,
+     tune_rf_full, tune_rf_reduced, tune_bt_full, tune_bt_reduced, 
+     tune_dt_full, tune_dt_reduced, file = "model_results.rda")
+
+save(rf_workflow_full, bt_workflow_full, rf_workflow_reduced,
+     bt_workflow_reduced, file = "workflows.rda")
+```
+

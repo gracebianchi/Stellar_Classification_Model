@@ -1,0 +1,9 @@
+﻿Name / Data Type / Measurement Unit / Description
+-----------------------------
+u / continuous / magnitude / Ultraviolet filter in the photometric system
+g / continuous / magnitude / Green filter in the photometric system
+r / continuous / magnitude / Red filter in the photometric system
+i / continuous / magnitude / Near Infrared filter in the photometric system
+z / continuous / magnitude / Infrared filter in the photometric system
+redshift / continuous / dimensionless / redshift value based on the increase in wavelength
+class / categorical  / – / STAR, GALAXY, and QSO (quasar)
