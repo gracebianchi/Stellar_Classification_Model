@@ -6,7 +6,7 @@ The central research question is whether five photometric measurements alone can
 
 Seven classification algorithms were trained and evaluated under both feature sets. The best model, Random Forest with redshift, achieved a **0.9959 multiclass ROC AUC** and **97.9% accuracy** on a held-out test set.
 
-**[View the complete HTML report](.PSTAT_231_Final_Bianchi.html)** | **[View the report source](./Pstat_231_Final_Bianchi.Rmd)** | **[View the training pipeline](./final_project_models_231.Rmd)**
+**[View the complete HTML report](https://gracebianchi.github.io/Stellar_Classification_Model/Pstat_231_Final_Bianchi.html)** | **[View the report source](./Pstat_231_Final_Bianchi.Rmd)** | **[View the training pipeline](./final_project_models_231.Rmd)**
 
 **Academic context:** Developed as the final project for UCSB’s graduate-level PSTAT 231: Statistical Machine Learning, which I received approval to take as an undergraduate. The project earned a score of 100%.
 
