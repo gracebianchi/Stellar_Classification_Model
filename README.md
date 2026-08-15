@@ -6,7 +6,7 @@ The central research question is whether five photometric measurements alone can
 
 Seven classification algorithms were trained and evaluated under both feature sets. The best model, Random Forest with redshift, achieved a **0.9959 multiclass ROC AUC** and **97.9% accuracy** on a held-out test set.
 
-**[View the complete HTML report](./Pstat_231_Final_Bianchi.html)** | **[View the report source](./Pstat_231_Final_Bianchi.Rmd)** | **[View the training pipeline](./final_project_models_231.Rmd)**
+**[View the complete HTML report](file:///Users/gracebianchi/Desktop/3rd%20year/Spring%202026/PSTAT%20231/final_project/Pstat_231_Final_Bianchi.html)** | **[View the report source](./Pstat_231_Final_Bianchi.Rmd)** | **[View the training pipeline](./final_project_models_231.Rmd)**
 
 **Academic context:** Developed as the final project for UCSB’s graduate-level PSTAT 231: Statistical Machine Learning, which I received approval to take as an undergraduate. The project earned a score of 100%.
 
